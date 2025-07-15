@@ -31,7 +31,7 @@ interface QueueTask {
 }
 
 class Queen {
-  private queueId = 0
+  private queueId = 1
   private waitingQueue: Map<number, QueueTask> = new Map() // 等待队列
   private runningQueue: Map<number, QueueTask> = new Map() // 运行队列
   private completedTasks: UploadTask[] = [] // 已完成任务
