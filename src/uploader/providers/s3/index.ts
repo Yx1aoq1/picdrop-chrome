@@ -1,10 +1,12 @@
-import type { S3Config } from "@/uploader/types"
 import { S3Client } from "@aws-sdk/client-s3"
 import { Upload } from "@aws-sdk/lib-storage"
+import type { S3Config } from "@uploader/types"
 
 import { ProviderBase } from "../base"
 
 export class S3Provider extends ProviderBase {
+  private instance: Upload | null = null
+
   constructor(private readonly config: S3Config) {
     super()
   }
@@ -26,7 +28,7 @@ export class S3Provider extends ProviderBase {
       ? `${this.config.path}${this.config.path.endsWith("/") ? "" : "/"}${file.name}`
       : file.name
 
-    const upload = new Upload({
+    this.instance = new Upload({
       client: Client,
       abortController: abort,
       params: {
@@ -36,11 +38,15 @@ export class S3Provider extends ProviderBase {
       }
     })
 
-    // upload.on("httpUploadProgress", (progress) => {
-    //   this.emit("progress", progress)
-    // })
+    this.instance.on("httpUploadProgress", (progress) => {
+      this.emit("progress", {
+        loaded: progress.loaded,
+        total: progress.total,
+        part: progress.part
+      })
+    })
 
-    const result = await upload.done()
+    const result = await this.instance.done()
 
     return {
       url: result.Location
@@ -51,5 +57,7 @@ export class S3Provider extends ProviderBase {
 
   resume() {}
 
-  cancel() {}
+  cancel() {
+    this.instance?.abort()
+  }
 }

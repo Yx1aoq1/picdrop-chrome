@@ -5,17 +5,9 @@ import { useState } from "react"
 
 import { useStorage } from "@plasmohq/storage/hook"
 
-import {
-  createUploader,
-  S3Provider,
-  UploadTypeConstant,
-  type S3Config,
-  type UploadConfig
-} from "./uploader"
+import { createUploader, type UploadConfig } from "./uploader"
 
 const { Dragger } = Upload
-
-type Provider = S3Provider
 
 function IndexPopup() {
   const [data, setData] = useState("")
@@ -27,26 +19,24 @@ function IndexPopup() {
   const props: UploadProps = {
     name: "file",
     multiple: true,
-    customRequest({ file, data, onSuccess, onError }) {
-      console.log("🚀 ~ customRequest ~ file:", file)
-      const config = configs[0]
-      let provider: Provider
-      switch (config.type) {
-        case UploadTypeConstant.AWS:
-          provider = new S3Provider(config as S3Config)
-          break
-        // case UploadTypeConstant.QINIU:
-        //   provider = new QiniuProvider(config)
-        //   break
-      }
-      const uploader = createUploader({ provider })
-      uploader.upload(file as File).then((res) => {
-        console.log(res)
-        copyTextToClipboard(md ? `[](${res} "图片alt")` : res)
-        setimgList((prev) => [res, ...prev])
-        message.success("上传成功，已复制")
-        setFileName(res)
+    async customRequest({ file, data, onProgress, onSuccess, onError }) {
+      const uploader = createUploader({
+        config: configs[0],
+        onProgress: (progress) => {
+          onProgress({
+            percent: Math.round((progress.loaded / progress.total) * 100)
+          })
+        },
+        onSuccess: (result) => {
+          onSuccess(result)
+        },
+        onError: (error) => {
+          onError(error)
+        }
       })
+
+      const taskId = uploader.upload(file as File)
+      uploader.cancel(taskId)
     }
   }
 

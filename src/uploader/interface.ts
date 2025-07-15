@@ -1,4 +1,4 @@
-import type { UploadTask } from "./types"
+import type { UploadTask } from "@uploader/types"
 
 export interface IProvider {
   upload: (file: File) => Promise<UploadTask>
